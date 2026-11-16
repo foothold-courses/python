@@ -1,0 +1,411 @@
+import { useState } from 'react';
+import COURSE_CONFIG from '../../config/course.config.js';
+import { LIGHT as D, FONT, MONO } from './brand.js';
+const labUnitDone = (unitId, done) => done.has(unitId);
+import MANIFEST from 'virtual:foothold-manifest';   // programs to write, per unit (built by vite.config.js)
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Foothold Dashboard — ACCORDION EDITION, DARK BRAND
+//
+// How this fits in the app: App.jsx renders <Dashboard/> whenever no lesson is
+// open. Props: student (null = guest), completedUnits, onSelectUnit(unitId),
+// onRequestLogin, onSignOff — unchanged, so App.jsx needs no edits.
+//
+// Modules are collapsible rows (an accordion). Each shows its catchy one-liner;
+// expanding reveals unit links with their own hook lines (all copy lives in
+// `blurb` fields in course.config.js — edit copy there, never here). The module
+// containing the learner's next incomplete unit starts expanded and that unit
+// carries a "START HERE" chip, so returning learners resume in one click.
+//
+// All colours/fonts come from ./brand.js — the DARK token block, the same one
+// the Landing page and the lessons share, so the dashboard, the landing and any
+// lesson feel like one continuous dark product. Amber stays the hero accent.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Module accent rotation: amber (the hero), blue (the lessons' secondary
+// accent), and bronze — three brand-adjacent tones that read on the dark canvas
+// and let each module have its own colour without fighting the amber hooks.
+const MODULE_COLORS = [D.amber, D.blue, D.bronze];
+const FIRE_BG = 'rgba(231,161,62,0.10)'; // warm amber wash behind Crucible rows
+
+// Modules marked `hidden: true` in course.config.js stay out of the dashboard
+// (and out of the course %) without being deleted.
+const MODULES = COURSE_CONFIG.modules.filter(m => !m.hidden);
+
+// Module chip: the config's `label` if given, else "MODULE 4" / "MODULE 6.5".
+const moduleLabel = (mod) => mod.label || mod.moduleId.replace(/^M(?=\d)/, 'MODULE ');
+
+// Chip + icon for one unit row. e-Lab Record units are mandatory lab work
+// (experiments and mini-project crucibles); other optional units are Crucibles
+// or the extras named by their `tag`.
+function unitKind(mod, unit) {
+  if (mod.labRecord) {
+    return /_5$/.test(unit.unitId)
+      ? { chip: 'MINI PROJECT', icon: '🔥', fire: true }
+      : { chip: 'EXPERIMENT ' + unit.unitId.replace('UnitLAB', ''), icon: '🧪', fire: false };
+  }
+  if (!unit.optional) return { chip: unit.unitId.replace('Unit', '').replace('_', '.'), icon: '▶️', fire: false };
+  if (/_C$/.test(unit.unitId)) return { chip: 'CRUCIBLE · FOR THE CERTIFICATE', icon: '🔥', fire: true };
+  return { chip: unit.tag || 'EXTRA', icon: '⭐', fire: false };
+}
+
+// Brand mark: three climbing steps. On dark, the two lower steps go light and
+// the summit step keeps the amber — same colourway as the Landing hero.
+function FootholdMark({ size = 34 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 100 100" aria-hidden="true" style={{ display: 'block', flexShrink: 0 }}>
+      <rect x="8" y="60" width="26" height="26" rx="7" fill={D.ink} />
+      <rect x="37" y="37" width="26" height="26" rx="7" fill={D.ink} />
+      <rect x="66" y="14" width="26" height="26" rx="7" fill={D.amber} />
+    </svg>
+  );
+}
+
+export default function Dashboard({ student, completedUnits, onSelectUnit, onRequestLogin, onSignOff, certStatus, onOpenCertificate, labCertStatus, onOpenLabCertificate, onOpenReport }) {
+  // Optional units (Crucibles) are bonus: excluded from the % so skipping
+  // challenges never blocks 100%. completedUnits may also hold stage
+  // pseudo-ids like "Unit4_C@spark"; counting only required ids filters those.
+  const requiredIds = new Set(
+    MODULES.flatMap(m => m.units.filter(u => !u.optional).map(u => u.unitId))
+  );
+  const totalUnits = requiredIds.size;
+  const doneSet = new Set(completedUnits);
+  const doneCount = completedUnits.filter(id => requiredIds.has(id)).length;
+
+  // Progress inside one unit (2026-11-14): how many of its programs are written.
+  // A unit is no longer all-or-nothing — 7 of 9 programs shows as 78%, not as
+  // "incomplete". GOOD (80%) is the level at which a unit counts as well covered:
+  // the bar turns green and "START HERE" moves on to the next unit.
+  // A unit finished before it had typed programs (older progress) counts as 100%.
+  const GOOD = 0.8;
+  const unitProgress = (unitId) => {
+    const programs = (MANIFEST[unitId] || []).filter(x => !x.optional);
+    const solved = programs.filter(x => doneSet.has(`${unitId}@ex:${x.id}`)).length;
+    const finished = doneSet.has(unitId) || (programs.length > 0 && solved === programs.length);
+    const frac = finished ? 1 : programs.length ? solved / programs.length : 0;
+    return { total: programs.length, solved, frac, finished };
+  };
+  const requiredList = [...requiredIds];
+  const pct = Math.round((requiredList.reduce((sum, id) => sum + unitProgress(id).frac, 0) / totalUnits) * 100);
+  const programsWritten = completedUnits.filter(id => id.includes('@ex:')).length;
+  const isGuest = !student;
+
+  // "Next up" = first required unit (in course order) not yet completed.
+  // Drives the auto-expanded module and the START HERE chip.
+  let nextUnitId = null, nextModuleId = null;
+  outer:
+  for (const mod of MODULES) {
+    for (const unit of mod.units) {
+      if (!unit.optional && unitProgress(unit.unitId).frac < GOOD) {
+        nextUnitId = unit.unitId; nextModuleId = mod.moduleId;
+        break outer;
+      }
+    }
+  }
+
+  // ---- Remembering where the learner was -------------------------------
+  // App.jsx unmounts the Dashboard while a lesson is open and mounts a FRESH
+  // one when the learner comes back, so any accordion state held only in
+  // useState is wiped on every return trip. That is why the dashboard used to
+  // snap back to Module 1: the "next up" module is computed from COMPLETED
+  // units, and someone browsing ahead into Module 4 without having ticked off
+  // Module 1 still has M1 as their next-up.
+  // Fix: whenever a unit is opened we stash its moduleId in localStorage, and
+  // on mount we prefer that remembered module over the computed next-up one.
+  // localStorage (not useState) is what survives the unmount.
+  const LAST_MODULE_KEY = 'foothold_last_module';
+
+  const readLastModule = () => {
+    try {
+      const saved = localStorage.getItem(LAST_MODULE_KEY);
+      // Guard against a stale id left over from an older course config.
+      return MODULES.some(m => m.moduleId === saved) ? saved : null;
+    } catch {
+      return null; // private-browsing / storage disabled — fall through silently
+    }
+  };
+
+  // Which module should be open on this mount, in priority order:
+  //   1. the module of the unit they were last inside (returning learner)
+  //   2. the module holding their next incomplete unit (fresh session)
+  //   3. the very first module (brand-new or fully-finished learner)
+  const initialOpenModule =
+    readLastModule() || nextModuleId || MODULES[0].moduleId;
+
+  // Accordion state: a Set of open moduleIds.
+  const [openModules, setOpenModules] = useState(() => new Set([initialOpenModule]));
+
+  // Wraps the onSelectUnit prop so opening any unit also records its module.
+  // App.jsx is untouched — the remembering happens entirely on this side.
+  const selectUnit = (unitId, moduleId) => {
+    try { localStorage.setItem(LAST_MODULE_KEY, moduleId); } catch { /* ignore */ }
+    onSelectUnit(unitId);
+  };
+  function toggleModule(moduleId) {
+    setOpenModules(prev => {
+      const next = new Set(prev);
+      next.has(moduleId) ? next.delete(moduleId) : next.add(moduleId);
+      return next;
+    });
+  }
+
+  return (
+    <div style={{ minHeight: '100vh', background: D.bgDeep, fontFamily: FONT }}>
+
+      {/* Hover/expand styling lives in real CSS (inline styles can't do
+          :hover or transitions on grid rows). Class names are local. On dark,
+          hover lifts a row to the raised surface instead of the old cream. */}
+      <style>{`
+        .fh-mod { transition: border-color 0.2s, box-shadow 0.2s; }
+        .fh-mod-head { cursor: pointer; user-select: none; }
+        .fh-mod-head:hover { background: ${D.surfaceRaised}; }
+        .fh-chev { transition: transform 0.25s ease; color: ${D.inkMuted}; font-size: 13px; }
+        .fh-open .fh-chev { transform: rotate(90deg); }
+        .fh-units { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s ease; }
+        .fh-open .fh-units { grid-template-rows: 1fr; }
+        .fh-units-inner { overflow: hidden; }
+        .fh-unit { cursor: pointer; border-left: 2px solid transparent;
+                   transition: background 0.15s, border-color 0.15s, transform 0.15s; }
+        .fh-unit:hover { background: ${D.surfaceRaised}; transform: translateX(4px); }
+      `}</style>
+
+      {/* ── Header: brand mark + wordmark left, guest/student box right ── */}
+      <div style={{ background: D.surface, borderBottom: `1px solid ${D.border}`, padding: '18px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <FootholdMark />
+          <div>
+            <div style={{ color: D.ink, fontSize: 19, fontWeight: 700, letterSpacing: '-0.01em' }}>
+              Foothold
+              <span style={{ color: D.inkMuted, fontWeight: 400, fontSize: 14 }}> · {COURSE_CONFIG.courseTitle}</span>
+            </div>
+            <div style={{ color: D.amberSoft, fontFamily: MONO, fontSize: 11.5 }}>Get your footing. Keep climbing.</div>
+          </div>
+        </div>
+        {isGuest ? (
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ color: D.ink, fontWeight: 600, fontSize: 14 }}>👋 Browsing as Guest</div>
+            <button onClick={onRequestLogin} style={{ marginTop: 4, background: 'transparent', border: `1px solid ${D.border}`, color: D.ink, borderRadius: 6, padding: '4px 10px', fontSize: 12, cursor: 'pointer', fontFamily: FONT }}>
+              Sign in to save progress
+            </button>
+          </div>
+        ) : (
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ color: D.ink, fontWeight: 600 }}>{student.name}</div>
+            <div style={{ color: D.inkMuted, fontSize: 12, fontFamily: MONO }}>{student.rollNo}</div>
+            <button onClick={onSignOff} style={{ marginTop: 4, background: 'transparent', border: `1px solid ${D.border}`, color: D.inkSoft, borderRadius: 6, padding: '4px 10px', fontSize: 12, cursor: 'pointer', fontFamily: FONT }}>
+              Sign Off
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* ── Course progress bar (navy → amber: the climb) on a dark track ── */}
+      <div style={{ height: 4, background: D.border }}>
+        <div style={{ height: '100%', width: `${pct}%`, background: `linear-gradient(90deg, ${D.blue}, ${D.amber})`, transition: 'width 0.6s' }} />
+      </div>
+
+      <div style={{ maxWidth: 860, margin: '0 auto', padding: '24px 20px 60px' }}>
+
+        {/* ── The hook: why this course is different ── */}
+        <div style={{ padding: '4px 4px 20px' }}>
+          <div style={{ color: D.ink, fontSize: 'clamp(19px, 4.5vw, 24px)', fontWeight: 700, lineHeight: 1.35, letterSpacing: '-0.01em' }}>
+            {COURSE_CONFIG.hook?.line1}
+          </div>
+          <div style={{ color: D.inkSoft, fontSize: 14.5, marginTop: 6 }}>
+            {COURSE_CONFIG.hook?.line2}
+          </div>
+        </div>
+
+        {/* ── Progress summary ── */}
+        <div style={{ background: D.surface, border: `1px solid ${D.border}`, borderRadius: 12, padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 18, marginBottom: 26 }}>
+          <div style={{ fontSize: 26 }}>🎯</div>
+          <div>
+            <div style={{ color: D.ink, fontWeight: 600, fontSize: 14.5 }}>{pct}% of the course · {programsWritten} program{programsWritten === 1 ? '' : 's'} written · {doneCount} of {totalUnits} units finished</div>
+            <div style={{ color: D.inkSoft, fontSize: 13 }}>
+              {pct === 0 ? 'Your climb starts with one click. Pick a foothold below.'
+                : pct === 100 ? 'Summit reached. The Crucibles still burn, if you dare. 🔥'
+                : 'Keep climbing — your next foothold is marked below.'}
+            </div>
+          </div>
+        </div>
+
+        {/* ── Certificate banner ──
+            Shows the path to the certificate: for guests, a nudge to sign in
+            (the certificate is issued from server progress, so it needs an
+            account); for signed-in learners, either a live progress line
+            (Crucibles + feedback) or, once eligible, the download button.
+            certStatus comes from App.jsx (certificateStatus over completedUnits);
+            the Certificate view itself re-checks against the Sheet before issuing. */}
+        {certStatus && (
+          <div style={{
+            background: certStatus.eligible ? 'rgba(231,161,62,0.12)' : D.surface,
+            border: `1px solid ${certStatus.eligible ? D.amber : D.border}`,
+            borderRadius: 12, padding: '16px 20px', marginBottom: 26,
+            display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap',
+          }}>
+            <div style={{ fontSize: 26 }}>🎓</div>
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <div style={{ color: D.ink, fontWeight: 700, fontSize: 15 }}>Course Certificate</div>
+              {isGuest ? (
+                <div style={{ color: D.inkSoft, fontSize: 13, marginTop: 2 }}>
+                  Sign in to earn a verifiable certificate — it’s issued from your saved progress.
+                </div>
+              ) : certStatus.eligible ? (
+                <div style={{ color: D.inkSoft, fontSize: 13, marginTop: 2 }}>
+                  Unlocked! All {certStatus.cruciblesTotal} Crucibles cleared and feedback submitted. 🔥
+                </div>
+              ) : (
+                <div style={{ color: D.inkSoft, fontSize: 13, marginTop: 2 }}>
+                  🔥 Crucibles {certStatus.cruciblesDone}/{certStatus.cruciblesTotal} · 📝 Feedback {certStatus.feedbackDone ? '✓' : 'pending'} — finish both to unlock.
+                </div>
+              )}
+            </div>
+            {isGuest ? (
+              <button onClick={onRequestLogin} style={{ background: 'transparent', border: `1px solid ${D.border}`, color: D.ink, borderRadius: 8, padding: '9px 16px', fontSize: 13.5, cursor: 'pointer', fontFamily: FONT }}>
+                Sign in
+              </button>
+            ) : (
+              <button onClick={onOpenCertificate} disabled={!certStatus.eligible} style={{
+                background: certStatus.eligible ? D.amber : D.border,
+                color: certStatus.eligible ? '#111A2E' : D.inkMuted,
+                border: 'none', borderRadius: 8, padding: '9px 18px', fontSize: 13.5, fontWeight: 700,
+                cursor: certStatus.eligible ? 'pointer' : 'not-allowed', fontFamily: FONT,
+              }}>
+                {certStatus.eligible ? '⬇ Get certificate' : 'Locked'}
+              </button>
+            )}
+          </div>
+        )}
+
+
+        {/* Modules 1–3 are background (no code yet). Someone who wants to start
+            typing Python straight away gets a one-click jump to Unit 4.1. */}
+        {!doneSet.has('Unit4_1') && MODULES.some(m => m.moduleId === 'M4') && (
+          <div style={{ background: D.surface, border: `1px dashed ${D.amber}`, borderRadius: 12, padding: '12px 18px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, minWidth: 220, color: D.inkSoft, fontSize: 13.5, lineHeight: 1.55 }}>
+              <strong style={{ color: D.ink }}>Want to write code right away?</strong> Modules 1–3 are the story behind
+              computers and languages. You can come back to them — your first line of Python is in Module 4.
+            </div>
+            <button onClick={() => selectUnit('Unit4_1', 'M4')} style={{ background: D.amber, color: '#111A2E', border: 'none', borderRadius: 8, padding: '9px 16px', fontSize: 13.5, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>
+              Start coding → Unit 4.1
+            </button>
+          </div>
+        )}
+
+        {/* ── The accordion ── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {MODULES.map((mod, mIdx) => {
+            const accent = mod.labRecord ? D.blue : MODULE_COLORS[mIdx % MODULE_COLORS.length];
+            // In the e-Lab Record every unit is required lab work.
+            const required = mod.labRecord ? mod.units : mod.units.filter(u => !u.optional);
+            const isDone = (u) => (mod.labRecord ? labUnitDone(u.unitId, doneSet) : doneSet.has(u.unitId));
+            const modDone = required.filter(isDone).length;
+            const modComplete = required.length > 0 && modDone === required.length;
+            const isOpen = openModules.has(mod.moduleId);
+            const isNextModule = mod.moduleId === nextModuleId;
+
+            return (
+              <div key={mod.moduleId} className={`fh-mod ${isOpen ? 'fh-open' : ''}`}
+                style={{
+                  background: D.surface,
+                  border: `1px solid ${isOpen ? accent + '88' : D.border}`,
+                  borderRadius: 12, overflow: 'hidden',
+                  boxShadow: isOpen ? '0 2px 12px rgba(22,41,74,0.10)' : 'none',
+                }}>
+
+                {/* Module header row: click anywhere to expand/collapse */}
+                <div className="fh-mod-head" onClick={() => toggleModule(mod.moduleId)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px' }}>
+                  <span className="fh-chev">▶</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+                      <span style={{ color: accent, fontFamily: MONO, fontSize: 11, letterSpacing: '0.08em', fontWeight: 700 }}>
+                        {moduleLabel(mod)}
+                      </span>
+                      <span style={{ color: D.ink, fontSize: 15.5, fontWeight: 700 }}>{mod.moduleTitle}</span>
+                      {isNextModule && !modComplete && (
+                        <span style={{ color: D.amberSoft, fontFamily: MONO, fontSize: 10, border: `1px solid ${D.amber}`, background: FIRE_BG, borderRadius: 999, padding: '2px 8px' }}>
+                          CONTINUE HERE
+                        </span>
+                      )}
+                    </div>
+                    {/* The module's hook line — the reason to click */}
+                    <div style={{ color: D.inkSoft, fontSize: 13, marginTop: 3, lineHeight: 1.5 }}>{mod.blurb}</div>
+                  </div>
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <div style={{ color: modComplete ? D.green : D.inkSoft, fontFamily: MONO, fontSize: 12 }}>
+                      {modComplete ? '✓ done' : `${modDone}/${required.length}`}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Unit links (animated expand via grid-rows trick) */}
+                <div className="fh-units">
+                  <div className="fh-units-inner">
+                    <div style={{ borderTop: `1px solid ${D.border}`, padding: '6px 0' }}>
+                      {mod.units.map(unit => {
+                        const prog = mod.labRecord ? null : unitProgress(unit.unitId);
+                        const done = isDone(unit) || !!(prog && prog.finished);
+                        const kind = unitKind(mod, unit);
+                        const isNext = unit.unitId === nextUnitId;
+                        return (
+                          <div key={unit.unitId} className="fh-unit"
+                            onClick={() => selectUnit(unit.unitId, mod.moduleId)}
+                            style={{
+                              display: 'flex', alignItems: 'flex-start', gap: 12,
+                              padding: '10px 18px 10px 46px',
+                              background: kind.fire ? FIRE_BG : 'transparent',
+                              borderLeftColor: isNext ? D.amber : 'transparent',
+                            }}>
+                            <span style={{ fontSize: 15, lineHeight: '20px', flexShrink: 0 }}>
+                              {done ? '✅' : kind.icon}
+                            </span>
+                            <div style={{ minWidth: 0 }}>
+                              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+                                <span style={{ color: done ? D.green : kind.fire ? D.amber : D.ink, fontSize: 14, fontWeight: 600 }}>
+                                  {unit.title}
+                                </span>
+                                <span style={{ color: kind.fire ? D.bronze : mod.labRecord ? D.blue : D.inkMuted, fontFamily: MONO, fontSize: 10.5 }}>
+                                  {kind.chip}
+                                </span>
+                                {isNext && (
+                                  <span style={{ color: '#111A2E', background: D.amber, fontFamily: MONO, fontSize: 10, fontWeight: 700, borderRadius: 999, padding: '2px 8px' }}>
+                                    START HERE →
+                                  </span>
+                                )}
+                              </div>
+                              {/* The unit's hook line — two seconds of temptation */}
+                              {unit.blurb && (
+                                <div style={{ color: D.inkSoft, fontSize: 12.5, marginTop: 2, lineHeight: 1.5 }}>{unit.blurb}</div>
+                              )}
+                              {/* Progress inside the unit: a bar plus the count in words,
+                                  so the state never depends on colour alone. */}
+                              {prog && prog.total > 0 && (prog.solved > 0 || prog.finished) && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6 }}>
+                                  <div role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(prog.frac * 100)}
+                                    style={{ width: 120, height: 6, borderRadius: 3, background: D.border, overflow: 'hidden', flexShrink: 0 }}>
+                                    <div style={{ width: `${prog.frac * 100}%`, height: '100%', borderRadius: 3, background: prog.frac >= GOOD ? D.green : D.amber }} />
+                                  </div>
+                                  <span style={{ color: D.inkSoft, fontFamily: MONO, fontSize: 11 }}>
+                                    {prog.finished && prog.solved < prog.total
+                                      ? 'finished'
+                                      : `${prog.solved} of ${prog.total} programs · ${Math.round(prog.frac * 100)}%`}
+                                    {!prog.finished && prog.frac >= GOOD ? ' · good' : ''}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}

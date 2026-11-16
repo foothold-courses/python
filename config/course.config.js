@@ -1,0 +1,402 @@
+// ============================================================
+//  COURSE CONFIG — the ONLY file you edit per course
+//  Change courseId, courseTitle, subtitle, batch
+//  Then update modules and units to match your course
+//
+//  `hook`  — the two attention lines at the top of the Dashboard.
+//  `blurb` — one catchy line per module and per unit, shown by the
+//            accordion Dashboard to pull learners into clicking.
+//            Blurbs are optional: a unit without one still renders.
+//  `label` — optional module chip text on the Dashboard (default:
+//            "MODULE <n>" from the moduleId).
+//  `hidden`— optional: true keeps a module out of the Dashboard (and
+//            out of the course %) without deleting it.
+//  `labRecord` — marks the e-Lab Record module: its units are all
+//            mandatory lab work, counted on their own (not in the course %).
+//  `tag`   — optional chip text for an optional unit.
+// ============================================================
+
+const COURSE_CONFIG = {
+
+  courseId:    "course_python",
+  courseTitle: "Python Programming",
+  subtitle:    "From zero to Pythonista",
+  batch:       "2025",
+
+  // "original" is the author's own site; a teacher's copy says "copy".
+  // A copy shows the credit line below on its landing page and does not show
+  // the author's research note (its learners' data goes to the teacher only).
+  edition:     "copy",
+
+  // Licence condition: every copy keeps this line, linked, on its landing page.
+  credit: {
+    text: "Foothold Python course by Aishwarya S.",
+    url:  "https://aishugithub.github.io/course_python/",
+  },
+
+  // Who signs the course certificate. Teachers: put your own name and role here.
+  certificate: {
+    signer:     "Your Name",
+    signerRole: "Course teacher · Your Institution",
+  },
+
+
+  // "For teachers" section on the landing page. It appears only once formUrl
+  // holds the link to the registration Google Form; leave it "" to keep it hidden.
+  adoption: {
+    formUrl: "",
+  },
+
+  hook: {
+    line1: "You don't read Foothold. You type it, run it, break it, and fix it.",
+    line2: "Every lesson ends with real Python you write yourself — open any module below and see.",
+  },
+
+  modules: [
+    {
+      moduleId:    "M1",
+      moduleTitle: "Computing",
+      icon:        "",
+      blurb: "Before you command the machine, meet it. What a computer really is — and why it's dumber than you think.",
+      units: [
+        { unitId: "Unit1_1", title: "What is a Computer?",
+          blurb: "It can't think. It can't guess. So how does it beat you at chess? Start here." },
+        { unitId: "Unit1_2", title: "Algorithms",
+          blurb: "A recipe so precise even a machine can't mess it up. Learn to write one." },
+        { unitId: "Unit1_3", title: "Konjam History",
+          blurb: "Konjam history, konjam drama: how we went from room-sized calculators to Python." },
+      ],
+    },
+    {
+      moduleId:    "M2",
+      moduleTitle: "Computing Languages",
+      icon:        "",
+      blurb: "Machines speak in voltages. You speak in words. Somebody has to translate.",
+      units: [
+        { unitId: "Unit2_1", title: "Human Vs Machine Lang",
+          blurb: "You say \"add the marks\". The CPU hears 10110011. Mind the gap." },
+        { unitId: "Unit2_2", title: "Machine code",
+          blurb: "Pure 1s and 0s — the only language your CPU has ever known. Peek at it once, respect it forever." },
+        { unitId: "Unit2_3", title: "Assembly Lang",
+          blurb: "One tiny step above raw binary. MOV, ADD, JMP — programming like it's 1975." },
+        { unitId: "Unit2_4", title: "High level Lang",
+          blurb: "Finally: code that reads like English. The trade you make for that comfort? Inside." },
+      ],
+    },
+    {
+      moduleId:    "M3",
+      moduleTitle: "The Conversion",
+      icon:        "",
+      blurb: "Your code is not what the machine runs. Discover what happens in between.",
+      units: [
+        { unitId: "Unit3_1", title: "Compilation",
+          blurb: "Translate everything first, run later. C's way: fast, strict, unforgiving." },
+        { unitId: "Unit3_2", title: "Interpretation",
+          blurb: "Translate line by line, as you go. Slower, friendlier — and Python's opening move." },
+        { unitId: "Unit3_3", title: "Python",
+          blurb: "Compiler or interpreter? Python cheekily answers \"both\". Meet the PVM." },
+      ],
+    },
+    {
+      moduleId:    "M4",
+      moduleTitle: "Your First Python Program",
+      icon:        "",
+      blurb: "Your first real line of Python — and the moment the machine obeys you.",
+      units: [
+        { unitId: "Unit4_0", title: "Running Python on Your Own Machine",
+          blurb: "Get Python breathing on your own laptop. Five minutes, one install, no excuses." },
+        { unitId: "Unit4_1", title: "Your First Program",
+          blurb: "print(\"Hello\"). One line, and you're officially a programmer. Come collect it." },
+        { unitId: "Unit4_2", title: "Variables & Memory",
+          blurb: "Where does x = 5 actually live? Step inside the machine's memory and watch." },
+        { unitId: "Unit4_3", title: "Input & Type Conversion",
+          blurb: "Your program finally talks back. But beware: everything users type is a string…" },
+        { unitId: "Unit4_4", title: "Operators & Expressions",
+          blurb: "+ - * / is the easy part. Wait till // and % start earning their keep." },
+        { unitId: "Unit4_5", title: "Formatted Output",
+          blurb: "Rs 450.0? Hi Meena ! Stop fighting commas — f-strings print exactly what you mean." },
+        { unitId: "Unit4_C", title: "The Crucible", optional: true,
+          blurb: "Four stages. Rising heat. Prove Module 4 didn't just pass through you." },
+      ],
+    },
+    {
+      moduleId:    "M5",
+      moduleTitle: "Making Decisions",
+      icon:        "",
+      blurb: "Teach your program to choose. This is where code gets a mind of its own.",
+      units: [
+        { unitId: "Unit5_1", title: "Comparisons & Booleans",
+          blurb: "== or =? \"10\" < \"9\"? 0.1 + 0.2 == 0.3? Every question has a True/False answer — some will surprise you." },
+        { unitId: "Unit5_2", title: "if / elif / else",
+          blurb: "One question, many paths. The single most-used pattern in all of programming." },
+        { unitId: "Unit5_3", title: "Combining Conditions",
+          blurb: "and, or, not — chain decisions inside decisions without tying a knot." },
+        { unitId: "Unit5_4", title: "Capstone: Decision Maker",
+          blurb: "Everything from Module 5, folded into one program that decides for you." },
+        { unitId: "Unit5_C", title: "The Crucible", optional: true,
+          blurb: "Think you can predict which branch runs? The Crucible doubts you." },
+      ],
+    },
+    {
+      moduleId:    "M6",
+      moduleTitle: "Repetition",
+      icon:        "",
+      blurb: "Make the computer do it a thousand times. You only say it once.",
+      units: [
+        { unitId: "Unit6_1", title: "The while Loop",
+          blurb: "The loop that runs as long as you let it. Also the loop that never stops if you don't." },
+        { unitId: "Unit6_2", title: "The for Loop & range()",
+          blurb: "Know exactly how many times? for is your precision instrument." },
+        { unitId: "Unit6_3", title: "break, continue & Nested Loops",
+          blurb: "Escape hatches and loops within loops — take full control of repetition." },
+        { unitId: "Unit6_4", title: "Capstone: Number-Guessing Game",
+          blurb: "Build an actual game. Your program keeps secrets and taunts the player." },
+        { unitId: "Unit6_C", title: "The Crucible", optional: true,
+          blurb: "Loops that lie, loops that leak. Untangle them if you can." },
+      ],
+    },
+    {
+      moduleId:    "M6.5",
+      moduleTitle: "Computational Thinking I — Thinking in Algorithms",
+      icon:        "",
+      blurb: "Syntax done. Now learn to think like a programmer — turning problems into algorithms.",
+      units: [
+        { unitId: "UnitCT1_1", title: "The Four Moves & the Accumulator",
+          blurb: "Decompose, spot patterns, abstract, design: the four moves behind every program ever written." },
+        { unitId: "UnitCT1_2", title: "Counting & Building with Loops",
+          blurb: "One humble variable, growing inside a loop, quietly powers half of programming." },
+        { unitId: "UnitCT1_3", title: "Deciding Inside a Loop",
+          blurb: "Loop + if = filter. Suddenly you can answer real questions about numbers." },
+        { unitId: "UnitCT1_4", title: "Patterns & Nested Loops",
+          blurb: "Those starry pyramid printouts in every exam? Conquered here, forever." },
+        { unitId: "UnitCT1_5", title: "Capstone: Crack It Yourself",
+          blurb: "No hand-holding. A raw problem and your four moves. Count and sum the primes." },
+        { unitId: "UnitCT1_C", title: "The Crucible", optional: true,
+          blurb: "Algorithms under pressure. Your thinking, tempered." },
+      ],
+    },
+    {
+      moduleId:    "M7",
+      moduleTitle: "Organizing Data",
+      icon:        "",
+      blurb: "One variable holds one thing. Real problems come in hundreds. Bring containers.",
+      units: [
+        { unitId: "Unit7_1", title: "Strings in Depth",
+          blurb: "Slice it, flip it, search it — text is data, and you're about to own it." },
+        { unitId: "Unit7_2", title: "Lists",
+          blurb: "Your first container: one name, a thousand values, endless possibilities." },
+        { unitId: "Unit7_3", title: "List Methods & Loop Patterns",
+          blurb: "append, sort, sum, max — the daily toolkit of every working programmer." },
+        { unitId: "Unit7_4", title: "Tuples",
+          blurb: "Lock a record, unpack it in one line, swap without a temp — and meet enumerate and zip." },
+        { unitId: "Unit7_4D", title: "Dictionaries",
+          blurb: "Look it up by name, not position. Then count anything — grades, votes, words — in one line." },
+        { unitId: "Unit7_5", title: "Sets: Unique Collections",
+          blurb: "Duplicates vanish, membership checks turn instant. The most underrated container." },
+        { unitId: "Unit7_6", title: "Capstone: Student Marks Manager",
+          blurb: "A real records system for a whole class. Your biggest build yet." },
+        { unitId: "Unit7_C", title: "The Crucible", optional: true,
+          blurb: "Data structures duel. One wrong index, and the Crucible will find it." },
+      ],
+    },
+    {
+      moduleId:    "M7.5",
+      moduleTitle: "Computational Thinking II — Algorithms on Data",
+      icon:        "",
+      blurb: "The classics — searching, sorting, matrices. The algorithms every CS interview assumes you know.",
+      units: [
+        { unitId: "UnitCT2_1", title: "Scanning a List",
+          blurb: "Max, min, average — one sweep through the data, eyes open." },
+        { unitId: "UnitCT2_2", title: "Searching: Linear & Binary",
+          blurb: "Find it in n steps — or log n if the list is sorted. Binary search is magic you can explain." },
+        { unitId: "UnitCT2_3", title: "Sorting: Bubble, Selection & Insertion",
+          blurb: "Watch chaos become order, swap by swap." },
+        { unitId: "UnitCT2_4", title: "Matrices: Grids of Data",
+          blurb: "Rows and columns — the data shape behind images, games and spreadsheets." },
+        { unitId: "UnitCT2_5", title: "String Algorithms",
+          blurb: "Palindromes, counts, reversals — crack the string questions exams love." },
+        { unitId: "UnitCT2_C", title: "The Crucible", optional: true,
+          blurb: "Classic algorithms, zero mercy." },
+      ],
+    },
+    {
+      moduleId:    "M8",
+      moduleTitle: "Functions & Modular Thinking",
+      icon:        "",
+      blurb: "Stop copy-pasting code. Name it once, call it forever.",
+      units: [
+        { unitId: "Unit8_1", title: "Why Functions?",
+          blurb: "The moment your program gets too big for one blob — and the cure." },
+        { unitId: "Unit8_2", title: "Parameters & Return Values",
+          blurb: "Send data in, get answers out. The contract every function signs." },
+        { unitId: "Unit8_3", title: "Scope & the Call Stack",
+          blurb: "Where do variables go when a function runs? Follow the stack, frame by frame." },
+        { unitId: "Unit8_4", title: "Grand Capstone: Marks Manager 2.0",
+          blurb: "Same app, rebuilt the professional way: clean, modular, function-powered." },
+        { unitId: "Unit8_C", title: "The Crucible", optional: true,
+          blurb: "Scope traps and return-value riddles. The forge is hot." },
+      ],
+    },
+    {
+      moduleId:    "M8.5",
+      moduleTitle: "Computational Thinking III — Thinking Recursively",
+      icon:        "",
+      blurb: "A function that calls itself. Sounds illegal. Solves the unsolvable.",
+      units: [
+        { unitId: "UnitCT3_1", title: "The Recursive Idea",
+          blurb: "Base case, smaller problem, trust. The three rules of thinking recursively." },
+        { unitId: "UnitCT3_2", title: "Recursion in Action",
+          blurb: "Factorial and Fibonacci — watch the call tree bloom and collapse." },
+        { unitId: "UnitCT3_3", title: "Tower of Hanoi",
+          blurb: "The puzzle monks solve as the universe ends. You'll do it in three lines." },
+        { unitId: "UnitCT3_C", title: "The Crucible", optional: true,
+          blurb: "Recursion, unrolled. Can you trace it without losing the thread?" },
+      ],
+    },
+    {
+      moduleId:    "M9",
+      moduleTitle: "When Things Go Wrong",
+      icon:        "",
+      blurb: "Crashes aren't the end. This module makes your programs survivors.",
+      units: [
+        { unitId: "Unit9_1", title: "Errors Aren't Failures",
+          blurb: "Read a traceback like a detective: bottom line first, story second." },
+        { unitId: "Unit9_2", title: "Catching & Raising",
+          blurb: "try, except, raise — catch trouble, or throw it yourself, on purpose." },
+        { unitId: "Unit9_3", title: "Files: Making Data Survive",
+          blurb: "RAM forgets the moment your program ends. Files remember forever." },
+        { unitId: "Unit9_4", title: "Capstone: The Persistent Marks Manager",
+          blurb: "Close the program, reopen it — the marks are still there. That's power." },
+        { unitId: "Unit9_C", title: "The Crucible", optional: true,
+          blurb: "Sneaky exceptions, files that vanish. Handle it." },
+      ],
+    },
+    {
+      moduleId:    "M10",
+      moduleTitle: "Object-Oriented Programming",
+      icon:        "",
+      blurb: "Data and behaviour, finally living together. The idea behind almost all modern software.",
+      units: [
+        { unitId: "Unit10_1", title: "Why Objects?",
+          blurb: "Three parallel lists drifting out of sync — and the elegant fix: the class." },
+        { unitId: "Unit10_2", title: "__init__ & self",
+          blurb: "Watch an object being born, slot by slot. And learn what self really is." },
+        { unitId: "Unit10_3", title: "Methods & Encapsulation",
+          blurb: "Give objects skills — and guards that keep their data honest." },
+        { unitId: "Unit10_4", title: "Inheritance",
+          blurb: "Write the parent once; children get it all free — then override what they must." },
+        { unitId: "Unit10_5", title: "Polymorphism & Abstraction",
+          blurb: "One method name, many behaviours. The trick that makes big software flexible." },
+        { unitId: "Unit10_6", title: "User-Defined Exceptions (Exceptions × Classes)",
+          blurb: "Module 9's exceptions meet Module 10's classes: raise InvalidMarkError, not a mystery." },
+        { unitId: "Unit10_7", title: "Capstone: Marks Manager 3.0",
+          blurb: "Two classes, one app — the marks manager reaches its final form." },
+        { unitId: "Unit10_C", title: "The Crucible", optional: true,
+          blurb: "Objects will misbehave. Show them who's the class here." },
+      ],
+    },
+    {
+      moduleId:    "M11",
+      moduleTitle: "Pythonic Python & the Ecosystem",
+      icon:        "",
+      blurb: "You can write Python. Now write it the way Pythonistas do.",
+      units: [
+        { unitId: "Unit11_1", title: "Modules & the Ecosystem",
+          blurb: "pip, venv, and the gigantic toolbox Python hands you for free." },
+        { unitId: "Unit11_2", title: "Pythonic Python",
+          blurb: "Comprehensions, lambda, sorted(key=…), any/all — say more with less code." },
+      ],
+    },
+    {
+      moduleId:    "M12",
+      moduleTitle: "Working with Real Data",
+      icon:        "",
+      blurb: "Toy examples end here. Real datasets, real tools.",
+      units: [
+        { unitId: "Unit12_1", title: "Meet Pandas: DataFrames",
+          blurb: "A spreadsheet inside Python, on steroids. Meet the DataFrame." },
+        { unitId: "Unit12_2", title: "Analysing Real Data",
+          blurb: "groupby, missing values and saved reports — answer real questions with a shop's sales." },
+      ],
+    },
+    {
+      moduleId:    "M13",
+      moduleTitle: "Data Visualization",
+      icon:        "",
+      blurb: "A number tells. A chart convinces. Make your data speak.",
+      units: [
+        { unitId: "Unit13_1", title: "Charts with Matplotlib",
+          blurb: "From your first line chart to your first dashboard — drawn entirely from code." },
+        { unitId: "Unit13_2", title: "Statistical Charts with Seaborn",
+          blurb: "Statistical beauty in one line: distributions, correlations, heatmaps." },
+        { unitId: "Unit13_3", title: "Interactive Charts with Plotly",
+          blurb: "Charts you can zoom, hover and play with. Data viz that talks back." },
+      ],
+    },
+    {
+      // ── FAR-TRANSFER ASSESSMENT — added 2026-09-14 ──
+      // A single optional:true unit (excluded from the completion % exactly
+      // like the Crucible/Lab units) presenting ONE brand-new synthesis
+      // problem that recombines loops, conditionals, dictionaries and
+      // functions in a scenario never used as a worked example elsewhere in
+      // the course. This is the direct evidence source for the paper's
+      // computational-thinking transfer claim: its quiz score is sent as a
+      // JSON payload through onUnitComplete -> App.jsx -> analytics.js's new
+      // `detail` param -> Code.gs's new Events sheet "Detail" column, so the
+      // score is recoverable per-student, not just a completion timestamp.
+      // Hidden for now. Remove `hidden` to bring the synthesis challenge back.
+      moduleId:    "FT",
+      hidden:      true,
+      label:       "FINAL ASCENT",
+      moduleTitle: "The Final Ascent",
+      icon:        "",
+      blurb: "One last problem. Nothing here was practiced directly — this is where everything you learned has to work together on its own.",
+      units: [
+        { unitId: "UnitFT", title: "The Final Ascent — A Synthesis Challenge", optional: true, tag: "OPTIONAL",
+          blurb: "A library late-fee calculator you've never seen before. Trace it, break it, then prove you can reason about all of it at once." },
+      ],
+    },
+    {
+      // ── MINI-PROJECTS — four generic tracks (rebuilt 2026-11-13, typing-first) ──
+      // Optional (excluded from the completion % and the certificate, like the
+      // Crucibles). A learner picks ONE track and grows one program through five
+      // checkpoints tied to modules: 1 core (M4–6) · 2 organise (M7–8) ·
+      // 3 survive (M9) · 4 model (M10) · 5 analyse & chart (M12–13).
+      // Filenames: UnitMP_<TRACK>.jsx.
+      moduleId:    "MP",
+      label:       "MINI PROJECT",
+      moduleTitle: "Mini-Projects — Pick a Track",
+      icon:        "",
+      blurb: "Pick one track and grow one real program through five checkpoints — from a menu in Module 6 to a chart in Module 13.",
+      units: [
+        { unitId: "UnitMP_GEN", title: "Track A — Personal Expense Tracker", optional: true,
+          blurb: "Log spending, warn when the budget breaks, remember it in a file, and chart where the money went." },
+        { unitId: "UnitMP_SHOP", title: "Track B — Shop Inventory Manager", optional: true,
+          blurb: "Sell, restock and bill at a canteen or stationery shop — with low-stock alarms and a stock-value chart." },
+        { unitId: "UnitMP_SEAT", title: "Track C — Event Seat Booking", optional: true,
+          blurb: "Book and cancel seats for a fest, cinema or bus: a seat map, no double booking, a waitlist and occupancy charts." },
+        { unitId: "UnitMP_LEAGUE", title: "Track D — Sports League Tracker", optional: true,
+          blurb: "Results in, points table out: tie-breakers, a saved table, Team and League classes and a goals chart." },
+      ],
+    },
+    {
+      // ── FINISH LINE — end-of-course feedback + certificate gate ──
+      // One optional unit (excluded from the completion % like the Crucible/FT
+      // units). Submitting it records "UnitFB" in the Progress sheet, which —
+      // together with all ten Crucibles — is what unlocks the course certificate
+      // (see src/shell/completion.js + Certificate.jsx). The feedback answers
+      // themselves go to a separate "Feedback" sheet via api.js submitFeedback.
+      moduleId:    "FB",
+      label:       "FINISH LINE",
+      moduleTitle: "Finish Line — Feedback & Certificate",
+      icon:        "",
+      blurb: "You've climbed the whole thing. Tell us how it went — with all ten Crucibles cleared, this unlocks your course certificate.",
+      units: [
+        { unitId: "UnitFB", title: "Your Verdict — Feedback, Review & Testimonial", optional: true, tag: "REQUIRED · COURSE CERTIFICATE",
+          blurb: "Two minutes of honesty: how Foothold compared, what helped, what didn't — then claim your certificate." },
+      ],
+    },
+  ],
+};
+
+export default COURSE_CONFIG;

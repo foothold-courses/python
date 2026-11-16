@@ -1,0 +1,61 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  # Allows re-running a failed deploy by hand from the Actions tab
+  workflow_dispatch:
+
+# The default GITHUB_TOKEN can be read-only; the gh-pages push needs write access
+permissions:
+  contents: write
+
+# Never let two deployments overlap — overlapping Pages deployments cause
+# "Deployment failed, try again later" errors
+concurrency:
+  group: gh-pages-deploy
+  cancel-in-progress: false
+
+# Usage signal (licence section 4): where a teacher's copy reports that it was
+# published. Empty on the original site, so nothing is sent from there.
+env:
+  ADOPTION_SIGNAL_URL: 'https://script.google.com/macros/s/AKfycbytTHeU5aPOKr0zvirvRrYuC0l4WlOvanQsJudh7Occ2VpqfGU9sR0csygJorDIlMSY/exec'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # The template itself is not a course site: only teachers' copies of it publish.
+    if: github.repository != 'foothold-courses/python'
+    steps:
+      # v6+ of the official actions run on Node 24 (Node 20 was deprecated on
+      # runners in 2026 — older majors print deprecation warnings)
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npx vite build
+        env:
+          # The site lives at /<repository name>/ on GitHub Pages, whatever the repository is called.
+          SITE_BASE: /${{ github.event.repository.name }}/
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+
+      # Tells the course author that this copy was published: the site's address,
+      # the repository name and the course title. No student data exists here to
+      # send: it lives only in the teacher's Google Sheet. See .github/adoption-signal.mjs.
+      - name: Usage signal (no student data)
+        if: env.ADOPTION_SIGNAL_URL != ''
+        continue-on-error: true
+        run: node .github/adoption-signal.mjs
