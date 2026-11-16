@@ -388,7 +388,7 @@ function withSession(body, handler) {
 // numbers, passwords, code or answers. Read sendWeeklySignal() below to check.
 // setupSheets() switches it on; installWeeklySignal() does it on its own.
 // ------------------------------------------------------------
-const ADOPTION_SIGNAL_URL = 'https://script.google.com/macros/s/AKfycbytTHeU5aPOKr0zvirvRrYuC0l4WlOvanQsJudh7Occ2VpqfGU9sR0csygJorDIlMSY/exec';
+const ADOPTION_SIGNAL_URL = 'https://script.google.com/macros/s/AKfycbyYh_kcoxzoHocsDogFaSC8tOWUN6zB_mNkmUowFuAAW-0heyu5g2MMi4HxZrKJZgyE/exec';
 
 function installWeeklySignal() {
   if (!ADOPTION_SIGNAL_URL) return 'No signal address set: nothing installed.';
